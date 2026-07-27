@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cdac.dto.request.OwnershipQuestionRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -55,6 +56,9 @@ public class OwnershipQuestion {
 
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
+    
+    @Column(name="expected_answer",nullable=false,columnDefinition="TEXT")
+    private String expectedAnswer;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

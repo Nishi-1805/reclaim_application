@@ -3,12 +3,12 @@ package com.cdac.constant;
 public final class AppConstants {
 
     private AppConstants() {
-        // Prevent instantiation
     }
 
     // =========================
     // Item Configuration
     // =========================
+
     public static final int MAX_ITEM_IMAGES = 3;
 
     public static final int MIN_OWNERSHIP_QUESTIONS = 3;
@@ -18,16 +18,31 @@ public final class AppConstants {
     // =========================
     // Matching Configuration
     // =========================
+
     public static final double MATCH_THRESHOLD = 70.0;
-    
+
+    public static final double CATEGORY_WEIGHT = 30.0;
+
+    public static final double BRAND_WEIGHT = 20.0;
+
+    public static final double COLOR_WEIGHT = 15.0;
+
+    public static final double LOCATION_WEIGHT = 15.0;
+
+    public static final double DATE_WEIGHT = 10.0;
+
+    public static final double DESCRIPTION_WEIGHT = 10.0;
+
     // =========================
     // Verification Configuration
     // =========================
+
     public static final double VERIFICATION_PASSING_SCORE = 60.0;
 
     // =========================
     // Pagination
     // =========================
+
     public static final int DEFAULT_PAGE_NUMBER = 0;
 
     public static final int DEFAULT_PAGE_SIZE = 10;

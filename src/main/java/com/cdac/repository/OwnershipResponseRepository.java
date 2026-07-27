@@ -18,4 +18,8 @@ public interface OwnershipResponseRepository extends JpaRepository<OwnershipResp
     boolean existsByClaimAndOwnershipQuestion(Claim claim, OwnershipQuestion ownershipQuestion);
 
     Optional<OwnershipResponse> findByClaimAndOwnershipQuestion(Claim claim, OwnershipQuestion ownershipQuestion);
+    
+    
+
+
 }

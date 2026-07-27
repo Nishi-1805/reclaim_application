@@ -12,10 +12,14 @@ import com.cdac.enums.ItemType;
 
 @Repository
 public interface ItemRepository extends JpaRepository<Item, Long> {
+	
+	List<Item> findByStatusIn(List<ItemStatus> statuses);
+	
+	//List<Item> findByReportedBy(User reportedBy);
 
     List<Item> findByReportedByOrderByCreatedAtDesc(User reportedBy);
 
-    List<Item> findByItemType(ItemType itemType);
+    List<Item> findByItemTypeAndStatusOrderByCreatedAtDesc(ItemType itemType, ItemStatus status);
 
     List<Item> findByItemTypeAndStatus(ItemType itemType, ItemStatus status);
 
@@ -24,4 +28,10 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findByReportedByAndStatusOrderByCreatedAtDesc(User reportedBy, ItemStatus status);
 
     List<Item> findByReportedByAndItemTypeAndStatusOrderByCreatedAtDesc(User reportedBy, ItemType itemType, ItemStatus status);
+    
+    List<Item> findByStatusOrderByCreatedAtDesc(ItemStatus status);
+    
+    long countByReportedBy(User reportedBy);
+
+    long countByReportedByAndItemType(User reportedBy, ItemType itemType);
 }

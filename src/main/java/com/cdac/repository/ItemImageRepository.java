@@ -16,7 +16,7 @@ public interface ItemImageRepository extends JpaRepository<ItemImage, Long> {
 
     Optional<ItemImage> findByIdAndItem(Long id, Item item);
 
-    boolean existsByItemAndDisplayOrder(Item item, Integer displayOrder);
+  //  boolean existsByItemAndDisplayOrder(Item item, Integer displayOrder);
 
-    Optional<ItemImage> findByItemAndDisplayOrder(Item item, Integer displayOrder);
+  //  Optional<ItemImage> findByItemAndDisplayOrder(Item item, Integer displayOrder);
 }

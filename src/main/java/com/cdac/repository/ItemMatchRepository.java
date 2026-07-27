@@ -26,4 +26,13 @@ public interface ItemMatchRepository extends JpaRepository<ItemMatch, Long> {
     boolean existsByLostItemAndFoundItem(Item lostItem, Item foundItem);
 
     Optional<ItemMatch> findByLostItemAndFoundItem(Item lostItem, Item foundItem);
+    
+    List<ItemMatch> findByLostItemOrFoundItemOrderByMatchScoreDesc(Item lostItem, Item foundItem);
+    
+    boolean existsByLostItemAndMatchStatus(Item lostItem, MatchStatus matchStatus);
+
+    boolean existsByFoundItemAndMatchStatus(Item foundItem, MatchStatus matchStatus);
+    
+    Optional<ItemMatch> findByLostItemAndFoundItemAndMatchStatus(Item lostItem, Item foundItem,
+            MatchStatus matchStatus);
 }
