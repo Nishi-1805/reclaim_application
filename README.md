@@ -109,7 +109,7 @@ The platform provides separate functionalities for users and administrators whil
 
 * Git
 * GitHub
-* Postman
+* Swagger
 * VS Code
 * Spring Tool Suite (STS)
 
