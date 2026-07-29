@@ -21,7 +21,10 @@ import com.cdac.exception.ResourceNotFoundException;
 import com.cdac.repository.ItemImageRepository;
 import com.cdac.repository.ItemRepository;
 import com.cdac.repository.UserRepository;
+import com.cdac.service.ImageStorageService;
 import com.cdac.service.ItemImageService;
+
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +36,7 @@ public class ItemImageServiceImpl implements ItemImageService {
     private final ItemImageRepository itemImageRepository;
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final ImageStorageService imageStorageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -79,6 +83,51 @@ public class ItemImageServiceImpl implements ItemImageService {
 
         return convertToResponse(savedImage);
     }
+    
+    @Override
+    public ItemImageResponse addImageToItem(
+            Long itemId,
+            MultipartFile file) {
+
+        User currentUser = getCurrentUser();
+
+        Item item = getItemByIdOrThrow(itemId);
+
+        validateItemOwner(currentUser, item);
+
+        validateItemOpen(item);
+
+        List<ItemImage> existingImages =
+                itemImageRepository.findByItemOrderByDisplayOrderAsc(item);
+
+        if (existingImages.size() >= AppConstants.MAX_ITEM_IMAGES) {
+
+            throw new InvalidRequestException(
+                    "Maximum "
+                            + AppConstants.MAX_ITEM_IMAGES
+                            + " images are allowed for one item.");
+        }
+
+        String imageUrl = imageStorageService.uploadImage(file);
+
+        int nextDisplayOrder =
+                existingImages.stream()
+                        .map(ItemImage::getDisplayOrder)
+                        .filter(Objects::nonNull)
+                        .max(Integer::compareTo)
+                        .orElse(0) + 1;
+
+        ItemImage itemImage = ItemImage.builder()
+                .item(item)
+                .imageUrl(imageUrl)
+                .displayOrder(nextDisplayOrder)
+                .build();
+
+        ItemImage savedImage =
+                itemImageRepository.save(itemImage);
+
+        return convertToResponse(savedImage);
+    }
 
     @Override
     public void deleteImage(Long itemId, Long imageId) {
@@ -93,6 +142,8 @@ public class ItemImageServiceImpl implements ItemImageService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Item image not found with id : " + imageId));
+        
+        imageStorageService.deleteImage(itemImage.getImageUrl());
 
         itemImageRepository.delete(itemImage);
     }

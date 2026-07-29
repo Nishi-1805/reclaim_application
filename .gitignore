@@ -31,3 +31,16 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+
+# Spring Boot configuration containing secrets
+src/main/resources/application.properties

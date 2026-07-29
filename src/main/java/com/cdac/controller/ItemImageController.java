@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.cdac.dto.request.ItemImageRequest;
 import com.cdac.dto.response.ItemImageResponse;
@@ -96,6 +98,42 @@ public class ItemImageController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(itemImageService.addImageToItem(itemId, request));
+    }
+    
+    @Operation(
+            summary = "Upload an image file for an item",
+            description = "Uploads an image file (jpg, jpeg, png, webp or gif, max 5MB) and attaches it "
+                    + "to the specified item. Only the owner of an open item can upload images. "
+                    + "Maximum 3 images are allowed per item."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Image uploaded successfully"),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid file or maximum image limit exceeded",
+                    content = @Content(
+                            schema = @Schema(hidden = true))),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "You are not authorized to modify this item",
+                    content = @Content(
+                            schema = @Schema(hidden = true))),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Item not found",
+                    content = @Content(
+                            schema = @Schema(hidden = true)))
+    })
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/upload")
+    public ResponseEntity<ItemImageResponse> uploadImageToItem(
+            @PathVariable Long itemId,
+            @RequestParam("file") MultipartFile file) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(itemImageService.addImageToItem(itemId, file));
     }
 
     @Operation(

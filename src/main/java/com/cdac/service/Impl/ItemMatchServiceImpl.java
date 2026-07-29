@@ -233,7 +233,7 @@ public class ItemMatchServiceImpl implements ItemMatchService {
      // Notification module
         notificationService.createNotification(
                 itemMatch.getLostItem().getReportedBy(),
-                NotificationType.CLAIM_REJECTED,
+                NotificationType.MATCH_REJECTED,
                 "A match for your lost item has been rejected.",
                 itemMatch.getLostItem(),
                 itemMatch,
