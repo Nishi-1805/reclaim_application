@@ -28,6 +28,9 @@ import lombok.RequiredArgsConstructor;
 
 import static com.cdac.constant.AppConstants.*;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -42,6 +45,11 @@ public class ItemMatchServiceImpl implements ItemMatchService {
 
         // Fetch the newly created item
         Item sourceItem = getItemByIdOrThrow(itemId);
+        
+        log.info("Starting match generation for item id={}, type={}, title='{}'",
+                sourceItem.getId(),
+                sourceItem.getItemType(),
+                sourceItem.getTitle());
 
         // Only OPEN items should be matched
         if (sourceItem.getStatus() != ItemStatus.OPEN) {
@@ -50,6 +58,10 @@ public class ItemMatchServiceImpl implements ItemMatchService {
 
         // Find all opposite-type candidate items
         List<Item> candidateItems = findCandidateItems(sourceItem);
+        
+        log.debug("Found {} candidate items for item id={}",
+                candidateItems.size(),
+                sourceItem.getId());
 
         // Compare with every candidate
         for (Item candidateItem : candidateItems) {
@@ -71,6 +83,9 @@ public class ItemMatchServiceImpl implements ItemMatchService {
             }
 
             if (alreadyExists) {
+            	log.debug("Skipping duplicate match between item {} and candidate {}",
+            	        sourceItem.getId(),
+            	        candidateItem.getId());
                 continue;
             }
 
@@ -79,6 +94,10 @@ public class ItemMatchServiceImpl implements ItemMatchService {
 
             // Ignore weak matches
             if (score < MATCH_THRESHOLD) {
+            	log.debug("Candidate item {} rejected. Score={} below threshold={}",
+            	        candidateItem.getId(),
+            	        score,
+            	        MATCH_THRESHOLD);
                 continue;
             }
 
@@ -119,6 +138,8 @@ public class ItemMatchServiceImpl implements ItemMatchService {
                     null
             );
         }
+        log.info("Match generation completed for item id={}",
+                sourceItem.getId());
     }
 
     @Override
@@ -131,13 +152,18 @@ public class ItemMatchServiceImpl implements ItemMatchService {
             throw new IllegalArgumentException("Item is not a lost item.");
         }
 
-        return itemMatchRepository
-                .findByLostItemOrderByMatchScoreDesc(lostItem)
-                .stream()
-                .map(match -> convertToSummaryResponse(
-                        match,
-                        match.getFoundItem()))
-                .toList();
+        List<ItemMatchSummaryResponse> matches =
+                itemMatchRepository
+                        .findByLostItemOrderByMatchScoreDesc(lostItem)
+                        .stream()
+                        .map(match -> convertToSummaryResponse(match, match.getFoundItem()))
+                        .toList();
+
+        log.info("Retrieved {} matches for lost item id={}",
+                matches.size(),
+                lostItemId);
+
+        return matches;
     }
 
     @Override
@@ -150,13 +176,18 @@ public class ItemMatchServiceImpl implements ItemMatchService {
             throw new IllegalArgumentException("Item is not a found item.");
         }
 
-        return itemMatchRepository
-                .findByFoundItemOrderByMatchScoreDesc(foundItem)
-                .stream()
-                .map(match -> convertToSummaryResponse(
-                        match,
-                        match.getLostItem()))
-                .toList();
+        List<ItemMatchSummaryResponse> matches =
+                itemMatchRepository
+                        .findByFoundItemOrderByMatchScoreDesc(foundItem)
+                        .stream()
+                        .map(match -> convertToSummaryResponse(match, match.getLostItem()))
+                        .toList();
+
+        log.info("Retrieved {} matches for found item id={}",
+                matches.size(),
+                foundItemId);
+
+        return matches;
     }
 
     @Override
@@ -168,12 +199,16 @@ public class ItemMatchServiceImpl implements ItemMatchService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Match not found with id : " + matchId));
+        
+        log.debug("Fetching match details for match id={}", matchId);
 
         return convertToItemMatchResponse(itemMatch);
     }
 
     @Override
     public void confirmMatch(Long matchId) {
+    	
+    	log.info("Confirming match id={}", matchId);
 
         ItemMatch itemMatch = itemMatchRepository.findById(matchId)
                 .orElseThrow(() ->
@@ -194,6 +229,11 @@ public class ItemMatchServiceImpl implements ItemMatchService {
         itemRepository.save(itemMatch.getFoundItem());
 
         itemMatchRepository.save(itemMatch);
+        
+        log.info("Match confirmed successfully. Match id={}, lostItem={}, foundItem={}",
+                itemMatch.getId(),
+                itemMatch.getLostItem().getId(),
+                itemMatch.getFoundItem().getId());
 
      // Notification module
         notificationService.createNotification(
@@ -215,6 +255,8 @@ public class ItemMatchServiceImpl implements ItemMatchService {
 
     @Override
     public void rejectMatch(Long matchId) {
+    	
+    	log.info("Rejecting match id={}", matchId);
 
         ItemMatch itemMatch = itemMatchRepository.findById(matchId)
                 .orElseThrow(() ->
@@ -229,6 +271,8 @@ public class ItemMatchServiceImpl implements ItemMatchService {
         itemMatch.setMatchStatus(MatchStatus.REJECTED);
 
         itemMatchRepository.save(itemMatch);
+        
+        log.warn("Match rejected. Match id={}", itemMatch.getId());
 
      // Notification module
         notificationService.createNotification(
@@ -250,6 +294,11 @@ public class ItemMatchServiceImpl implements ItemMatchService {
     
     //Helper Methods
     private void saveMatch(ItemMatch itemMatch) {
+    	
+        log.info("Match found: lostItemId={}, foundItemId={}, score={}%, reason=\"{}\"",
+                itemMatch.getLostItem().getId(), itemMatch.getFoundItem().getId(),
+                itemMatch.getMatchScore(), itemMatch.getMatchReason());
+        
         itemMatchRepository.save(itemMatch);
     }
     

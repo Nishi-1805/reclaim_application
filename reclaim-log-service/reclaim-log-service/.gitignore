@@ -1,0 +1,9 @@
+bin/
+obj/
+logs/
+*.user
+.vs/
+
+# Keep the real API key out of git — override it via environment variable
+# LogService__ApiKey instead of committing it in appsettings.json.
+appsettings.Local.json

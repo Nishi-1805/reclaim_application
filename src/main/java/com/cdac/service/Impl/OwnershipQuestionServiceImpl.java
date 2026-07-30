@@ -16,7 +16,9 @@ import com.cdac.repository.OwnershipQuestionRepository;
 import com.cdac.service.OwnershipQuestionService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -31,6 +33,8 @@ public class OwnershipQuestionServiceImpl implements OwnershipQuestionService {
     public List<OwnershipQuestionResponse> getQuestionsByItem(Long itemId) {
 
         Item item = getItemByIdOrThrow(itemId);
+        
+        log.info("Ownership questions requested for item id={}", itemId);
         
         if(item.getItemType() != ItemType.FOUND){
             throw new InvalidRequestException(

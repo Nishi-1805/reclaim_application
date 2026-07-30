@@ -20,7 +20,9 @@ import com.cdac.repository.UserRepository;
 import com.cdac.service.OwnershipResponseService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -38,8 +40,14 @@ public class OwnershipResponseServiceImpl implements OwnershipResponseService {
     	        .orElseThrow(() ->
     	                new ResourceNotFoundException(
     	                        "Claim not found with id : " + claimId));
+    	
+    	log.info("Ownership responses requested for claim id={}", claimId);
 
     	User currentUser = getCurrentUser();
+    	
+    	log.info("User {} is accessing ownership responses for claim {}",
+    	        currentUser.getEmail(),
+    	        claimId);
 
     	User owner = claim.getItemMatch()
     	                  .getFoundItem()

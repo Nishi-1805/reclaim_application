@@ -22,7 +22,9 @@ import com.cdac.security.JwtService;
 import com.cdac.service.AuthService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -56,6 +58,8 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+        
+        log.info("New user registered: id={}, email={}", savedUser.getId(), savedUser.getEmail());
 
         String token = generateToken(savedUser);
 
@@ -64,6 +68,9 @@ public class AuthServiceImpl implements AuthService {
     
     @Override
     public AuthResponse login(LoginRequest request) {
+    	
+    	log.debug("Authentication request received for email={}",
+    	        request.getEmail());
 
         authenticationManager.authenticate(
 
@@ -82,11 +89,19 @@ public class AuthServiceImpl implements AuthService {
                                 "User not found."));
         
         if(user.getAccountStatus()!=AccountStatus.ACTIVE){
+        	
+        	log.warn("Login blocked for inactive account: id={}, email={}, status={}",
+        	        user.getId(),
+        	        user.getEmail(),
+        	        user.getAccountStatus());
+        	
             throw new ForbiddenException(
                 "Your account is not active.");
         }
 
         String token = generateToken(user);
+        
+        log.info("User logged in: id={}, email={}", user.getId(), user.getEmail());
 
         return buildAuthResponse(user, token);
     }

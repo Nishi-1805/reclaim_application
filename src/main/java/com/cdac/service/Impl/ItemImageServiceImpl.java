@@ -27,7 +27,9 @@ import com.cdac.service.ItemImageService;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -44,10 +46,17 @@ public class ItemImageServiceImpl implements ItemImageService {
 
         Item item = getItemByIdOrThrow(itemId);
 
-        return itemImageRepository.findByItemOrderByDisplayOrderAsc(item)
+        List<ItemImageResponse> images = itemImageRepository
+                .findByItemOrderByDisplayOrderAsc(item)
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
+
+        log.info("Retrieved {} images for item id={}",
+                images.size(),
+                itemId);
+
+        return images;
     }
 
     @Override
@@ -58,6 +67,8 @@ public class ItemImageServiceImpl implements ItemImageService {
 
         validateItemOwner(currentUser, item);
         validateItemOpen(item);
+        
+        log.info("Adding image URL to item id={}", itemId);
 
         List<ItemImage> existingImages =
                 itemImageRepository.findByItemOrderByDisplayOrderAsc(item);
@@ -81,6 +92,11 @@ public class ItemImageServiceImpl implements ItemImageService {
 
         ItemImage savedImage = itemImageRepository.save(itemImage);
 
+        log.info("Image added successfully. imageId={}, itemId={}, displayOrder={}",
+                savedImage.getId(),
+                itemId,
+                savedImage.getDisplayOrder());
+
         return convertToResponse(savedImage);
     }
     
@@ -96,6 +112,8 @@ public class ItemImageServiceImpl implements ItemImageService {
         validateItemOwner(currentUser, item);
 
         validateItemOpen(item);
+        
+        log.info("Uploading image for item id={}", itemId);
 
         List<ItemImage> existingImages =
                 itemImageRepository.findByItemOrderByDisplayOrderAsc(item);
@@ -110,6 +128,8 @@ public class ItemImageServiceImpl implements ItemImageService {
 
         String imageUrl = imageStorageService.uploadImage(file);
 
+        log.debug("Image uploaded to Cloudinary for item id={}", itemId);
+        
         int nextDisplayOrder =
                 existingImages.stream()
                         .map(ItemImage::getDisplayOrder)
@@ -123,8 +143,12 @@ public class ItemImageServiceImpl implements ItemImageService {
                 .displayOrder(nextDisplayOrder)
                 .build();
 
-        ItemImage savedImage =
-                itemImageRepository.save(itemImage);
+        ItemImage savedImage = itemImageRepository.save(itemImage);
+
+        log.info("Image uploaded successfully. imageId={}, itemId={}, displayOrder={}",
+                savedImage.getId(),
+                itemId,
+                savedImage.getDisplayOrder());
 
         return convertToResponse(savedImage);
     }
@@ -137,6 +161,10 @@ public class ItemImageServiceImpl implements ItemImageService {
 
         validateItemOwner(currentUser, item);
         validateItemOpen(item);
+        
+        log.info("Deleting image id={} from item id={}",
+                imageId,
+                itemId);
 
         ItemImage itemImage = itemImageRepository.findByIdAndItem(imageId, item)
                 .orElseThrow(() ->
@@ -144,8 +172,15 @@ public class ItemImageServiceImpl implements ItemImageService {
                                 "Item image not found with id : " + imageId));
         
         imageStorageService.deleteImage(itemImage.getImageUrl());
+        
+        log.debug("Image removed from Cloudinary. imageId={}",
+                imageId);
 
         itemImageRepository.delete(itemImage);
+        
+        log.info("Image deleted successfully. imageId={}, itemId={}",
+                imageId,
+                itemId);
     }
 
     // -------------------------------------------------------

@@ -39,6 +39,9 @@ import com.cdac.service.ClaimService;
 import com.cdac.service.NotificationService;
 import com.cdac.dto.response.OwnershipAnswerResponse;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -58,6 +61,10 @@ public class ClaimServiceImpl implements ClaimService {
 
 	    // Get logged-in user
 		User currentUser = getCurrentUser();
+		
+		log.info("Submitting claim. User={}, itemMatchId={}",
+		        currentUser.getEmail(),
+		        request.getItemMatchId());
 
 	    // Fetch Item Match
 	    ItemMatch itemMatch = getItemMatchByIdOrThrow(
@@ -80,11 +87,23 @@ public class ClaimServiceImpl implements ClaimService {
 
 	    // Save Claim
 	    Claim savedClaim = claimRepository.save(claim);
+	    
+	    log.info("Claim created successfully. claimId={}, claimant={}, matchId={}",
+	            savedClaim.getId(),
+	            currentUser.getEmail(),
+	            itemMatch.getId());
 
 	    // Save Ownership Responses
 	    createOwnershipResponses(savedClaim, request);
+	    
+	    log.debug("Ownership responses saved for claim id={}",
+	            savedClaim.getId());
 
 	    double verificationScore = verifyOwnershipAnswers(savedClaim);
+	    
+	    log.info("Ownership verification completed. claimId={}, score={}%",
+	            savedClaim.getId(),
+	            verificationScore);
 
 	    if (verificationScore >= 80.0) {
 
@@ -115,6 +134,9 @@ public class ClaimServiceImpl implements ClaimService {
 	public ClaimResponse getClaimById(Long claimId) {
 
 	    Claim claim = getClaimByIdOrThrow(claimId);
+	    
+	    log.debug("Fetching claim details. claimId={}",
+	            claimId);
 
 	    return convertToClaimResponse(claim);
 	}
@@ -125,11 +147,18 @@ public class ClaimServiceImpl implements ClaimService {
 
 	    User currentUser = getCurrentUser();
 
-	    return claimRepository
-	            .findByClaimedByUserOrderByCreatedAtDesc(currentUser)
-	            .stream()
-	            .map(this::convertToClaimSummaryResponse)
-	            .toList();
+	    List<ClaimSummaryResponse> claims =
+	            claimRepository
+	                    .findByClaimedByUserOrderByCreatedAtDesc(currentUser)
+	                    .stream()
+	                    .map(this::convertToClaimSummaryResponse)
+	                    .toList();
+
+	    log.info("Retrieved {} claims for user={}",
+	            claims.size(),
+	            currentUser.getEmail());
+
+	    return claims;
 	}
 	
 	@Override
@@ -148,13 +177,18 @@ public class ClaimServiceImpl implements ClaimService {
 		            "You are not authorized to view claims for this item.");
 		}
 
-	    return claimRepository
-	            .findByItemMatch_LostItemOrItemMatch_FoundItemOrderByCreatedAtDesc(
-	                    item,
-	                    item)
-	            .stream()
-	            .map(this::convertToClaimSummaryResponse)
-	            .toList();
+		List<ClaimSummaryResponse> claims =
+		        claimRepository
+		                .findByItemMatch_LostItemOrItemMatch_FoundItemOrderByCreatedAtDesc(item, item)
+		                .stream()
+		                .map(this::convertToClaimSummaryResponse)
+		                .toList();
+
+		log.info("Retrieved {} claims for item id={}",
+		        claims.size(),
+		        itemId);
+
+		return claims;
 	}
 	
 	@Override
@@ -178,11 +212,18 @@ public class ClaimServiceImpl implements ClaimService {
 	                "You are not authorized to view claims for this match.");
 	    }
 
-	    return claimRepository
-	            .findByItemMatchOrderByCreatedAtDesc(itemMatch)
-	            .stream()
-	            .map(this::convertToClaimSummaryResponse)
-	            .toList();
+	    List<ClaimSummaryResponse> claims =
+	            claimRepository
+	                    .findByItemMatchOrderByCreatedAtDesc(itemMatch)
+	                    .stream()
+	                    .map(this::convertToClaimSummaryResponse)
+	                    .toList();
+
+	    log.info("Retrieved {} claims for match id={}",
+	            claims.size(),
+	            itemMatchId);
+
+	    return claims;
 	}
 	
 	@Override
@@ -190,6 +231,10 @@ public class ClaimServiceImpl implements ClaimService {
 	public void withdrawClaim(Long claimId) {
 
 	    User currentUser = getCurrentUser();
+	    
+	    log.info("Withdrawing claim. claimId={}, user={}",
+	            claimId,
+	            currentUser.getEmail());
 
 	    Claim claim = getClaimByIdOrThrow(claimId);
 
@@ -198,6 +243,9 @@ public class ClaimServiceImpl implements ClaimService {
 	    claim.setStatus(ClaimStatus.CANCELLED);
 
 	    claimRepository.save(claim);
+	    
+	    log.info("Claim withdrawn successfully. claimId={}",
+	            claimId);
 	    
 	    notificationService.createNotification(
 	            claim.getItemMatch().getFoundItem().getReportedBy(),
@@ -378,6 +426,10 @@ public class ClaimServiceImpl implements ClaimService {
 
 	        responses.add(response);
 	    }
+	    
+	    log.debug("Saving {} ownership responses for claim id={}",
+	            responses.size(),
+	            claim.getId());
 
 	    ownershipResponseRepository.saveAll(responses);
 	}
@@ -494,6 +546,10 @@ public class ClaimServiceImpl implements ClaimService {
 	            claim.getItemMatch().getFoundItem(),
 	            claim.getItemMatch(),
 	            claim);
+	    
+	    log.info("Claim APPROVED: claimId={}, matchId={}, score={}%, claimant={}",
+	            claim.getId(), claim.getItemMatch().getId(), verificationScore,
+	            claim.getClaimedByUser().getEmail());
 	}
 	
 	private void rejectClaim(
@@ -507,6 +563,10 @@ public class ClaimServiceImpl implements ClaimService {
 	                    + verificationScore + "%");
 
 	    claimRepository.save(claim);
+	    
+	    log.info("Claim REJECTED: claimId={}, matchId={}, score={}%, claimant={}",
+	            claim.getId(), claim.getItemMatch().getId(), verificationScore,
+	            claim.getClaimedByUser().getEmail());
 
 	    notificationService.createNotification(
 	            claim.getClaimedByUser(),

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+<springProperty
+    scope="context"
+    name="DOTNET_URL"
+    source="logging.dotnet.url"/>
+
+<springProperty
+    scope="context"
+    name="DOTNET_API_KEY"
+    source="logging.dotnet.api-key"/>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- Console logging -->
+
+    <appender name="CONSOLE"
+              class="ch.qos.logback.core.ConsoleAppender">
+
+        <encoder>
+
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n
+            </pattern>
+
+        </encoder>
+
+    </appender>
+
+
+    <!-- HTTP Appender -->
+
+    <appender name="HTTP"
+
+              class="com.cdac.logging.HttpLogAppender">
+
+      <url>${DOTNET_URL}</url>
+
+<apiKey>${DOTNET_API_KEY}</apiKey>
+
+        <sourceName>Reclaim Backend</sourceName>
+
+    </appender>
+
+
+    <!-- Async wrapper -->
+
+    <appender name="ASYNC_HTTP"
+
+              class="ch.qos.logback.classic.AsyncAppender">
+
+        <queueSize>1024</queueSize>
+
+        <discardingThreshold>0</discardingThreshold>
+
+        <neverBlock>true</neverBlock>
+
+        <appender-ref ref="HTTP"/>
+
+    </appender>
+
+
+    <!-- Application logs -->
+
+    <logger name="com.cdac"
+
+            level="INFO"
+
+            additivity="false">
+
+        <appender-ref ref="CONSOLE"/>
+
+        <appender-ref ref="ASYNC_HTTP"/>
+
+    </logger>
+
+
+    <!-- Root logs -->
+
+    <root level="INFO">
+
+        <appender-ref ref="CONSOLE"/>
+
+    </root>
+
+</configuration>

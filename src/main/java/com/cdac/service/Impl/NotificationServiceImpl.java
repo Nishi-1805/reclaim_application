@@ -20,7 +20,9 @@ import com.cdac.repository.UserRepository;
 import com.cdac.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -32,6 +34,9 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void createNotification(User user, NotificationType type,
     		String message, Item item, ItemMatch itemMatch, Claim claim) {
+    	log.info("Creating notification: type={} for user={}",
+    	        type,
+    	        user.getEmail());
     	 Notification notification = Notification.builder()
     			  .user(user)
     		        .notificationType(type)
@@ -44,6 +49,10 @@ public class NotificationServiceImpl implements NotificationService {
     		        .build();
 
     	    notificationRepository.save(notification);
+    	    
+    	    log.info("Notification created successfully for user={} with type={}",
+    	            user.getEmail(),
+    	            type);
     }
 
     @Override
@@ -51,12 +60,22 @@ public class NotificationServiceImpl implements NotificationService {
     public List<NotificationResponse> getMyNotifications() {
 
         User currentUser = getCurrentUser();
+        
+        log.info("Fetching notifications for user={}",
+                currentUser.getEmail());
 
-        return notificationRepository
-                .findByUserOrderByCreatedAtDesc(currentUser)
-                .stream()
-                .map(this::convertToNotificationResponse)
-                .toList();
+        List<NotificationResponse> notifications =
+                notificationRepository
+                        .findByUserOrderByCreatedAtDesc(currentUser)
+                        .stream()
+                        .map(this::convertToNotificationResponse)
+                        .toList();
+
+        log.info("Returned {} notifications for user={}",
+                notifications.size(),
+                currentUser.getEmail());
+
+        return notifications;
     }
 
     @Override
@@ -64,20 +83,34 @@ public class NotificationServiceImpl implements NotificationService {
     public List<NotificationResponse> getUnreadNotifications() {
 
         User currentUser = getCurrentUser();
+        
+        log.info("Fetching unread notifications for user={}",
+                currentUser.getEmail());
 
-        return notificationRepository
-                .findByUserAndIsReadOrderByCreatedAtDesc(
-                        currentUser,
-                        false)
-                .stream()
-                .map(this::convertToNotificationResponse)
-                .toList();
+        List<NotificationResponse> notifications =
+                notificationRepository
+                        .findByUserAndIsReadOrderByCreatedAtDesc(
+                                currentUser,
+                                false)
+                        .stream()
+                        .map(this::convertToNotificationResponse)
+                        .toList();
+
+        log.info("Returned {} unread notifications for user={}",
+                notifications.size(),
+                currentUser.getEmail());
+
+        return notifications;
     }
 
     @Override
     public void markAsRead(Long notificationId) {
 
         User currentUser = getCurrentUser();
+        
+        log.info("User {} requested to mark notification {} as read",
+                currentUser.getEmail(),
+                notificationId);
 
         Notification notification =
                 notificationRepository
@@ -91,6 +124,9 @@ public class NotificationServiceImpl implements NotificationService {
             notification.setIsRead(true);
 
             notificationRepository.save(notification);
+            
+            log.info("Notification {} marked as read",
+                    notificationId);
         }
     }
 
@@ -98,6 +134,9 @@ public class NotificationServiceImpl implements NotificationService {
     public void markAllAsRead() {
 
         User currentUser = getCurrentUser();
+        
+        log.info("User {} requested to mark all notifications as read",
+                currentUser.getEmail());
 
         List<Notification> notifications =
                 notificationRepository
@@ -109,6 +148,10 @@ public class NotificationServiceImpl implements NotificationService {
                 notification.setIsRead(true));
 
         notificationRepository.saveAll(notifications);
+        
+        log.info("{} notifications marked as read for user={}",
+                notifications.size(),
+                currentUser.getEmail());
     }
 
     @Override
@@ -117,8 +160,14 @@ public class NotificationServiceImpl implements NotificationService {
 
         User currentUser = getCurrentUser();
 
-        return notificationRepository
+        long count = notificationRepository
                 .countByUserAndIsReadFalse(currentUser);
+
+        log.info("Unread notification count for user={} is {}",
+                currentUser.getEmail(),
+                count);
+
+        return count;
     }
 
     // Helper methods below

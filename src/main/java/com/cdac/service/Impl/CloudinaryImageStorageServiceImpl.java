@@ -12,7 +12,9 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CloudinaryImageStorageServiceImpl
@@ -26,6 +28,10 @@ public class CloudinaryImageStorageServiceImpl
     public String uploadImage(MultipartFile file) {
 
         validateImage(file);
+        
+        log.info("Uploading image to Cloudinary. Original filename={}, size={} bytes",
+                file.getOriginalFilename(),
+                file.getSize());
 
         try {
 
@@ -34,10 +40,19 @@ public class CloudinaryImageStorageServiceImpl
                             file.getBytes(),
                             ObjectUtils.emptyMap());
 
-            return uploadResult.get("secure_url").toString();
+            String imageUrl = uploadResult.get("secure_url").toString();
+
+            log.info("Image uploaded successfully to Cloudinary. URL={}",
+                    imageUrl);
+
+            return imageUrl;
 
         } catch (IOException e) {
 
+        	 log.error("Cloudinary upload failed for file={}",
+        	            file.getOriginalFilename(),
+        	            e);
+        	 
             throw new InvalidRequestException(
                     "Failed to upload image.");
         }
@@ -50,11 +65,22 @@ public class CloudinaryImageStorageServiceImpl
 
             String publicId = extractPublicId(imageUrl);
 
+            log.info("Deleting Cloudinary image. publicId={}",
+                    publicId);
+
             cloudinary.uploader().destroy(
                     publicId,
                     ObjectUtils.emptyMap());
+            
+            log.info("Cloudinary image deleted successfully. publicId={}",
+                    publicId);
 
         } catch (Exception e) {
+        	
+
+            log.error("Cloudinary image deletion failed. imageUrl={}",
+                    imageUrl,
+                    e);
 
             throw new InvalidRequestException(
                     "Failed to delete image.");

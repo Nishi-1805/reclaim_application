@@ -27,7 +27,9 @@ import com.cdac.repository.UserRepository;
 import com.cdac.service.UserService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -44,6 +46,9 @@ public class UserServiceImpl implements UserService {
 	public UserProfileResponse getMyProfile() {
 
 	    User currentUser = getCurrentUser();
+	    
+	    log.info("Profile fetched for user: {} ({})", currentUser.getId(),
+	            currentUser.getEmail());
 
 	    return convertToUserProfileResponse(currentUser);
 	}
@@ -52,11 +57,16 @@ public class UserServiceImpl implements UserService {
 	public UserProfileResponse updateProfile(UpdateProfileRequest request) {
 
 	    User currentUser = getCurrentUser();
+	    
+	    log.info("Profile update requested by user: {} ({})", currentUser.getId(),
+	            currentUser.getEmail());
 
 	    currentUser.setFullName(request.getFullName().trim());
 	    currentUser.setPhoneNumber(request.getPhoneNumber());
 
 	    userRepository.save(currentUser);
+	    
+	    log.info("Profile updated successfully for user: {}", currentUser.getId());
 
 	    return convertToUserProfileResponse(currentUser);
 	}
@@ -65,6 +75,8 @@ public class UserServiceImpl implements UserService {
 	public void changePassword(ChangePasswordRequest request) {
 
 	    User currentUser = getCurrentUser();
+	    
+	    log.info("Password change requested for user: {}", currentUser.getEmail());
 
 	    validatePasswordChange(currentUser, request);
 
@@ -72,12 +84,17 @@ public class UserServiceImpl implements UserService {
 	            passwordEncoder.encode(request.getNewPassword()));
 
 	    userRepository.save(currentUser);
+	    
+	    log.info("Password changed successfully for user: {}", currentUser.getEmail());
 	}
 	
 	@Override
 	public void deactivateMyAccount() {
 
 	    User currentUser = getCurrentUser();
+	    
+	    log.warn("Account deactivation requested by user: {} ({})", currentUser.getId(),
+	            currentUser.getEmail());
 
 	    if (currentUser.getAccountStatus() == AccountStatus.DEACTIVATED) {
 	        throw new InvalidRequestException(
@@ -87,6 +104,8 @@ public class UserServiceImpl implements UserService {
 	    currentUser.setAccountStatus(AccountStatus.DEACTIVATED);
 
 	    userRepository.save(currentUser);
+	    
+	    log.warn("Account deactivated successfully for user: {}", currentUser.getEmail());
 	}
 	
 	@Override
@@ -94,6 +113,8 @@ public class UserServiceImpl implements UserService {
 	public UserDashboardResponse getDashboard() {
 
 	    User currentUser = getCurrentUser();
+	    
+	    log.info("Dashboard requested by user: {}", currentUser.getEmail());
 
 	    long totalItems =
 	            itemRepository.countByReportedBy(currentUser);
@@ -133,6 +154,8 @@ public class UserServiceImpl implements UserService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<UserSummaryResponse> getAllUsers() {
+		
+		log.info("Admin requested all registered users.");
 
 	    return userRepository.findAll()
 	            .stream()
@@ -145,6 +168,8 @@ public class UserServiceImpl implements UserService {
 	public UserProfileResponse getUserById(Long userId) {
 
 	    User user = getUserByIdOrThrow(userId);
+	    
+	    log.info("Admin viewed profile of user: {}", user.getEmail());
 
 	    return convertToUserProfileResponse(user);
 	}
@@ -159,6 +184,9 @@ public class UserServiceImpl implements UserService {
 	    user.setAccountStatus(request.getAccountStatus());
 
 	    userRepository.save(user);
+	    
+	    log.warn("Admin action: user id={} ({}) account status changed to {}",
+	            user.getId(), user.getEmail(), request.getAccountStatus());
 
 	    return convertToUserProfileResponse(user);
 	}
@@ -166,6 +194,8 @@ public class UserServiceImpl implements UserService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<UserSummaryResponse> getUsersByStatus(AccountStatus status) {
+		
+		log.info("Admin requested users with status: {}", status);
 
 	    return userRepository.findByAccountStatus(status)
 	            .stream()

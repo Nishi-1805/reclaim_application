@@ -33,7 +33,9 @@ import com.cdac.service.ItemService;
 import com.cdac.dto.response.OwnershipQuestionResponse;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -71,6 +73,10 @@ public class ItemServiceImpl implements ItemService {
 
         // Save Item first
         Item savedItem = itemRepository.save(item);
+        
+        log.info("Item reported: id={}, type={}, title='{}', reportedBy={}",
+                savedItem.getId(), savedItem.getItemType(), savedItem.getTitle(),
+                currentUser.getEmail());
 
         // Create ownership questions only for FOUND items
         if (request.getItemType() == ItemType.FOUND) {
@@ -94,6 +100,8 @@ public class ItemServiceImpl implements ItemService {
     public ItemResponse getItemById(Long itemId) {
 
         Item item = getItemByIdOrThrow(itemId);
+        
+        log.debug("Fetching item details for item id={}", itemId);
 
         return convertToItemResponse(item);
     }
@@ -102,10 +110,14 @@ public class ItemServiceImpl implements ItemService {
     @Transactional(readOnly = true)
     public List<ItemResponse> getAllItems() {
 
-        return itemRepository.findByStatusOrderByCreatedAtDesc(ItemStatus.OPEN)
-                .stream()
-                .map(this::convertToItemResponse)
-                .toList();
+    	List<Item> items =
+    	        itemRepository.findByStatusOrderByCreatedAtDesc(ItemStatus.OPEN);
+
+    	log.info("Retrieved {} open items", items.size());
+
+    	return items.stream()
+    	        .map(this::convertToItemResponse)
+    	        .toList();
     }
 
     @Override
@@ -114,7 +126,12 @@ public class ItemServiceImpl implements ItemService {
 
         User currentUser = getCurrentUser();
 
-        List<Item> items = itemRepository.findByReportedByOrderByCreatedAtDesc(currentUser);
+        List<Item> items =
+                itemRepository.findByReportedByOrderByCreatedAtDesc(currentUser);
+
+        log.info("User {} retrieved {} reported items",
+                currentUser.getEmail(),
+                items.size());
 
         return items.stream()
                 .map(this::convertToItemResponse)
@@ -127,6 +144,10 @@ public class ItemServiceImpl implements ItemService {
         User currentUser = getCurrentUser();
 
         Item item = getItemByIdOrThrow(itemId);
+        
+        log.info("Updating item id={} by user={}",
+                itemId,
+                currentUser.getEmail());
 
         // Only the owner can update the item
         if (!item.getReportedBy().getId().equals(currentUser.getId())) {
@@ -146,6 +167,8 @@ public class ItemServiceImpl implements ItemService {
         item.setItemDate(request.getItemDate());
 
         itemRepository.save(item);
+        
+        log.info("Item updated successfully. Item id={}", item.getId());
 
         return convertToItemResponse(item);
     }
@@ -169,6 +192,8 @@ public class ItemServiceImpl implements ItemService {
         item.setStatus(ItemStatus.CANCELLED);
 
         itemRepository.save(item);
+        
+        log.warn("Item cancelled. Item id={}", item.getId());
     }
 
     
@@ -253,6 +278,10 @@ public class ItemServiceImpl implements ItemService {
         private void createOwnershipQuestions(Item item, List<OwnershipQuestionRequest> list) {
 
             int displayOrder = 1;
+            
+            log.debug("Creating {} ownership questions for item id={}",
+                    list.size(),
+                    item.getId());
 
             for (OwnershipQuestionRequest question : list) {
 
@@ -265,6 +294,8 @@ public class ItemServiceImpl implements ItemService {
 
                 ownershipQuestionRepository.save(ownershipQuestion);
             }
+            log.info("Ownership questions created for item id={}",
+                    item.getId());
         }
         
         private void createItemImages(Item item, List<ItemImageRequest> imageRequests) {
@@ -280,6 +311,10 @@ public class ItemServiceImpl implements ItemService {
             }
 
             int displayOrder = 1;
+            
+            log.debug("Saving {} image references for item id={}",
+                    imageRequests.size(),
+                    item.getId());
 
             for (ItemImageRequest imageRequest : imageRequests) {
 
@@ -296,6 +331,10 @@ public class ItemServiceImpl implements ItemService {
                         .build();
 
                 itemImageRepository.save(itemImage);
+                
+                log.info("Saved {} image references for item id={}",
+                        displayOrder - 1,
+                        item.getId());
             }
         }
         
@@ -343,6 +382,10 @@ public class ItemServiceImpl implements ItemService {
                     itemRepository.findByItemTypeAndStatusOrderByCreatedAtDesc(
                             itemType,
                             ItemStatus.OPEN);
+            
+            log.info("Retrieved {} {} items",
+                    items.size(),
+                    itemType);
 
             return items.stream()
                     .map(this::convertToItemResponse)
