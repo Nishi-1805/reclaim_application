@@ -1,4 +1,4 @@
-# Reclaim – Intelligent Lost & Found Matching & Verification Platform
+# Reclaim – Intelligent Lost & Found Matching & Verification & Monitoring Platform
 
 ## Overview
 
@@ -7,6 +7,8 @@ Reclaim is a full-stack web application that helps users report lost and found i
 Unlike conventional Lost & Found systems that rely only on manual browsing, Reclaim combines automated item matching with ownership verification questions to improve the chances of returning items to their rightful owners.
 
 The platform provides separate functionalities for users and administrators while maintaining a secure authentication system using JWT.
+
+Reclaim also includes a lightweight .NET 8 centralized logging service that receives application logs from the Spring Boot backend over HTTP, enabling centralized log management and monitoring.
 
 ---
 
@@ -60,6 +62,16 @@ The platform provides separate functionalities for users and administrators whil
 
 ---
 
+### Centralized Logging
+
+Spring Boot → .NET Log Streaming
+Centralized HTTP Log Collector
+Daily Rolling Log Files
+Structured Serilog Logging
+API-Key Protected Logging Endpoint
+
+---
+
 ### User Dashboard
 
 * Recent Matches
@@ -89,6 +101,10 @@ The platform provides separate functionalities for users and administrators whil
 * Hibernate
 * Maven
 
+* .NET 8
+* ASP.NET Core Web API
+* Serilog
+
 ## Frontend
 
 * React
@@ -110,6 +126,7 @@ The platform provides separate functionalities for users and administrators whil
 * Git
 * GitHub
 * Swagger
+* Serilog
 * VS Code
 * Spring Tool Suite (STS)
 
@@ -131,6 +148,14 @@ Business Services
 Spring Data JPA
        │
 MySQL Database
+       |
+HTTP Log Appender
+       │
+.NET 8 Log Service
+       │
+    Serilog
+       │
+Rolling Log Files
 
 Cloudinary
 (Image Storage)
@@ -174,7 +199,16 @@ src
  ├── utils
 ```
 
----
+## .NET Logger
+```
+reclaim-log-service
+ ├── Controllers
+ ├── Middleware
+ ├── Models
+ ├── Program.cs
+ ├── appsettings.json
+
+```
 
 # Installation
 
@@ -216,6 +250,18 @@ http://localhost:5173
 
 ---
 
+.NET Logger
+```
+cd reclaim-log-service
+
+dotnet restore
+
+dotnet run
+Runs on
+
+http://localhost:5225
+```
+
 # Configuration
 
 Sensitive configuration files are intentionally excluded from version control.
@@ -243,9 +289,21 @@ Configure:
 
 ---
 
+.NET Logger
+```
+appsettings.json
+
+Configure
+
+API Key
+Port
+Serilog
+```
 # Authentication
 
 All secured APIs require a JWT token.
+
+Logging service endpoints are protected using an X-Api-Key header for server-to-server communication.
 
 Example Header
 
@@ -277,6 +335,9 @@ Authorization: Bearer <JWT_TOKEN>
 * OCR-based Item Recognition
 * Location-Based Search
 * Google Maps Integration
+* Centralized Log Dashboard
+* ELK Stack Integration
+* Application Performance Monitoring
 
 ---
 
