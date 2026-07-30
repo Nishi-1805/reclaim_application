@@ -126,12 +126,3 @@ business logic, so it does not turn the overall system into a
 microservice architecture; it's an auxiliary logging sink, not a decomposed
 service boundary for Reclaim's domain functionality.
 
-## 6. Not yet verified by an actual run
-
-This code was written and carefully hand-reviewed against known-stable
-ASP.NET Core 8 / Serilog / Logback APIs, but **could not be compiled or run
-in the environment this was built in** (no `dotnet` SDK, no network access
-to restore NuGet packages or re-verify Maven). Please run
-`dotnet restore && dotnet run` and `mvn compile` and report back the first
-thing that breaks, if anything — the same way we caught real issues in the
-frontend/backend integration earlier.
